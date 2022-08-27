@@ -45,6 +45,7 @@ function getBonuses(seed, rarity)
     end
 
     local dockRange = (rarity.value / 2 + 1 + round(getFloat(0.0, 0.4), 1)) * 100
+    local fighterCargoPickup = 1
 
     local scanner = 5 -- base value, in percent
     -- add flat percentage based on rarity
@@ -54,11 +55,11 @@ function getBonuses(seed, rarity)
     scanner = scanner + math.random() * ((rarity.value + 1) * 15) -- add random value between +0% (worst rarity) and +90% (best rarity)
     scanner = scanner / 50
 
-    return lootRange, deepScan, radar, highlightRange, dockRange, scanner, cooldown
+    return lootRange, deepScan, radar, highlightRange, dockRange, scanner, cooldown, fighterCargoPickup
 end
 
 function onInstalled(seed, rarity, permanent)
-    local lootRange, deepScan, radar, localhighlightRange, dockRange, scanner, localcooldown = getBonuses(seed, rarity)
+    local lootRange, deepScan, radar, localhighlightRange, dockRange, scanner, localcooldown, fighterCargoPickup = getBonuses(seed, rarity)
 	highlightRange = localhighlightRange
 	cooldown = localcooldown
 
@@ -69,6 +70,7 @@ function onInstalled(seed, rarity, permanent)
 	
 	if permanent then
 	    addAbsoluteBias(StatsBonuses.TransporterRange, dockRange)
+		addAbsoluteBias(StatsBonuses.FighterCargoPickup, fighterCargoPickup)
 	end
 	
     if onClient() then
@@ -87,16 +89,22 @@ function onUninstalled(seed, rarity, permanent)
 end
 
 function getComparableValues(seed, rarity)
-    local _, _, _, highlightRange, _, scanner, cooldown = getBonuses(seed, rarity, false)
+    local lootRange, deepScan, radar, highlightRange, dockRange, scanner, cooldown, fighterCargoPickup = getBonuses(seed, rarity, false)
 
     local base = {}
     local bonus = {}
+    table.insert(base, {name = "Loot Collection Range"%_t, key = "loot_range", value = round(lootRange / 100), comp = UpgradeComparison.MoreIsBetter})
+    table.insert(base, {name = "Deep Scan Range"%_t, key = "deepscan_range", value = deepScan, comp = UpgradeComparison.MoreIsBetter})
+    table.insert(base, {name = "Radar Range"%_t, key = "radar_range", value = radar, comp = UpgradeComparison.MoreIsBetter})
     table.insert(base, {name = "Highlight Range"%_t, key = "highlight_range", value = round(highlightRange / 100), comp = UpgradeComparison.MoreIsBetter})
-    table.insert(bonus, {name = "Highlight Duration"%_t, key = "highlight_duration", value = round(highlightDuration), comp = UpgradeComparison.MoreIsBetter})
+    table.insert(base, {name = "Highlight Duration"%_t, key = "highlight_duration", value = round(highlightDuration), comp = UpgradeComparison.MoreIsBetter})
     table.insert(base, {name = "Detection Range"%_t, key = "detection_range", value = 1, comp = UpgradeComparison.MoreIsBetter})
     table.insert(base, {name = "Scanner Range"%_t, key = "range", value = round(scanner * 100), comp = UpgradeComparison.MoreIsBetter})
-    table.insert(bonus, {name = "Scanner Range"%_t, key = "range", value = round(scanner * 100), comp = UpgradeComparison.MoreIsBetter})
+    table.insert(base, {name = "Scanner Range"%_t, key = "range", value = round(scanner * 100), comp = UpgradeComparison.MoreIsBetter})
     table.insert(base, {name = "Cooldown"%_t, key = "cooldown", value = cooldown, comp = UpgradeComparison.LessIsBetter})
+	
+    table.insert(bonus, {name = "Docking Distance"%_t, key = "docking_distance", value = dockRange / 100, comp = UpgradeComparison.MoreIsBetter})
+    table.insert(bonus, {name = "Fighter Cargo Pickup"%_t, key = "fighter_cargo_pickup", value = fighterCargoPickup, comp = UpgradeComparison.MoreIsBetter})
 
     return base, bonus
 end
@@ -110,14 +118,14 @@ function getIcon(seed, rarity)
 end
 
 function getEnergy(seed, rarity, permanent)
-    local lootRange, _, _, highlightRange, _, _, _ = getBonuses(seed, rarity)
+    local lootRange, _, _, highlightRange, _, _, _, _ = getBonuses(seed, rarity)
     highlightRange = math.min(highlightRange, 1500)
 
     return highlightRange * 1000 * 1000 / (1.2 ^ rarity.value)
 end
 
 function getPrice(seed, rarity)
-    local lootRange, _, _, highlightRange, _, _, _ = getBonuses(seed, rarity)
+    local lootRange, _, _, highlightRange, _, _, _, _ = getBonuses(seed, rarity)
     highlightRange = math.min(highlightRange, 1500)
 
     local lootPrice = 400 * lootRange
@@ -127,7 +135,7 @@ function getPrice(seed, rarity)
 end
 
 function getTooltipLines(seed, rarity, permanent)
-    local lootRange, deepScan, radar, highlightRange, dockRange, scanner, cooldown = getBonuses(seed, rarity)
+    local lootRange, deepScan, radar, highlightRange, dockRange, scanner, cooldown, fighterCargoPickup = getBonuses(seed, rarity)
 
     local bonuses = {}
     local texts = {}
@@ -154,6 +162,14 @@ function getTooltipLines(seed, rarity, permanent)
 			table.insert(texts, {ltext = "Docking Distance"%_t, rtext = "+${distance} km"%_t % {distance = dockRange / 100}, icon = "data/textures/icons/solar-system.png", boosted = permanent})
 		end
 		table.insert(bonuses, {ltext = "Docking Distance"%_t, rtext = "+${distance} km"%_t % {distance = dockRange / 100}, icon = "data/textures/icons/solar-system.png"})
+	end
+
+	-- this one only takes effect if it's installed permanently
+	if fighterCargoPickup = 1 then
+		if permanent then
+			table.insert(texts, {ltext = "Fighter Cargo Pickup"%_t, icon = "data/textures/icons/fighter.png", boosted = permanent})
+		end
+		table.insert(bonuses, {ltext = "Fighter Cargo Pickup"%_t, icon = "data/textures/icons/fighter.png"})
 	end
 
 	if highlightRange ~= 0 then
