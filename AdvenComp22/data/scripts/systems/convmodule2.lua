@@ -165,11 +165,11 @@ function getTooltipLines(seed, rarity, permanent)
 	end
 
 	-- this one only takes effect if it's installed permanently
-	if fighterCargoPickup = 1 then
+	if fighterCargoPickup ~= 0 then
 		if permanent then
-			table.insert(texts, {ltext = "Fighter Cargo Pickup"%_t, icon = "data/textures/icons/fighter.png", boosted = permanent})
+			table.insert(texts, {ltext = "Fighter Cargo Pickup"%_t, rtext="Yes", icon = "data/textures/icons/fighter.png", boosted = permanent})
 		end
-		table.insert(bonuses, {ltext = "Fighter Cargo Pickup"%_t, icon = "data/textures/icons/fighter.png"})
+		table.insert(bonuses, {ltext = "Fighter Cargo Pickup"%_t, rtext="Yes", icon = "data/textures/icons/fighter.png"})
 	end
 
 	if highlightRange ~= 0 then
